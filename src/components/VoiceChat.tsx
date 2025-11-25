@@ -32,6 +32,9 @@ const VoiceChat: React.FC = () => {
   const transcriptionRef = useRef('');
   const historyRef = useRef<HTMLDivElement>(null);
 
+  // Récupération de la clé API compatible Vite
+  const API_KEY = import.meta.env.VITE_API_KEY;
+
   const analyzeAudio = () => {
     if (!analyserRef.current) return;
 
@@ -103,8 +106,14 @@ const VoiceChat: React.FC = () => {
     setStatus('connecting');
     setTranscriptionHistory([]);
 
+    if (!API_KEY) {
+        setError("Clé API manquante (VITE_API_KEY).");
+        setStatus('disconnected');
+        return;
+    }
+
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: API_KEY });
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       audioContextRef.current = new AudioContextClass({ sampleRate: 24000 });
       
