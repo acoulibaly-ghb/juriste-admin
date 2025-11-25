@@ -99,6 +99,9 @@ const TextChat: React.FC = () => {
   const audioQueueRef = useRef<string[]>([]);
   const isProcessingQueueRef = useRef(false);
 
+  // Récupération de la clé API compatible Vite
+  const API_KEY = import.meta.env.VITE_API_KEY;
+
   const suggestions = [
     "Qu'est-ce qu'un service public ?",
     "L'arrêt Benjamin et la police administrative",
@@ -153,8 +156,12 @@ const TextChat: React.FC = () => {
   };
 
   const generateAndPlayTTS = async (text: string) => {
+    if (!API_KEY) {
+        console.error("Clé API manquante");
+        return;
+    }
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: text }] }],
@@ -198,6 +205,11 @@ const TextChat: React.FC = () => {
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
+    
+    if (!API_KEY) {
+        setMessages(prev => [...prev, { role: 'model', text: "### Erreur de Configuration\n\nLa clé API est manquante. Veuillez configurer la variable d'environnement `VITE_API_KEY`.", timestamp: new Date() }]);
+        return;
+    }
 
     // Reset Audio
     if (audioContextRef.current) {
@@ -214,7 +226,7 @@ const TextChat: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: API_KEY });
       
       const result = await ai.models.generateContentStream({
         model: 'gemini-2.5-flash',
@@ -231,7 +243,7 @@ const TextChat: React.FC = () => {
       setMessages(prev => [...prev, { role: 'model', text: '', timestamp: new Date() }]);
 
       for await (const chunk of result) {
-          const chunkText = chunk.text; // Fixed: use .text property instead of .text() method
+          const chunkText = chunk.text; 
           if (chunkText) {
             fullText += chunkText;
             sentenceBuffer += chunkText;
